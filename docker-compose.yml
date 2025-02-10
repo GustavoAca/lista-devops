@@ -23,19 +23,6 @@ services:
     networks:
       - microservices
 
-
-  #  rabbitmq:
-#    image: rabbitmq:3.9.14-alpine
-#    hostname: rabbitmq
-#    ports:
-#      - "5672:5672"
-#      - "15672:15672"
-#    environment:
-#      - RABBITMQ_DEFAULT_USER=lista-rabbit
-#      - RABBITMQ_DEFAULT_PASS=1234567
-#    volumes:
-#      - rabbitmq-data:/var/lib/rabbitmq
-
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.10.2
     container_name: elasticsearch
@@ -84,20 +71,6 @@ services:
       - ELASTICSEARCH_HOST=http://elasticsearch:9200
     networks:
       - microservices
-#
-#  zipkin:
-#    image: openzipkin/zipkin:2.24
-#    container_name: zipkin
-#    environment:
-#      - STORAGE_TYPE=elasticsearch
-#      - ES_HOSTS=http://elasticsearch:9200
-#      - ES_INDEX=zipkin
-#    ports:
-#      - "9411:9411"
-#    depends_on:
-#      - elasticsearch
-#    networks:
-#      - microservices
 
 volumes:
   rabbitmq-data:
