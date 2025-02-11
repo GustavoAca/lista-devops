@@ -6,17 +6,17 @@ drop schema public;
 create user att_user with password 'user_ddl_SaintBier';
 grant all privileges on schema att_user to att_user;
 
-create user att_user_APP
+create user att_user_app
 with password 'user_SaintBier';
-grant usage on schema att_user to att_user_APP;
+grant usage on schema att_user to att_user_app;
 
 create user att_lista
 with password 'lista_ddl_SaintBier';
 grant all privileges on schema att_lista to att_lista;
 
-create user att_lista_APP
+create user att_lista_app
 with password 'lista_SaintBier';
-grant usage on schema att_lista to att_lista_APP;
+grant usage on schema att_lista to att_lista_app;
 
 -- Performance Tuning
 ALTER SYSTEM
