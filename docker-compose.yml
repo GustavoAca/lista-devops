@@ -3,7 +3,6 @@ version: '3.8'
 services:
   postgres:
     container_name: postgres
-    shm_size: 1g
     build: ./postgres
     environment:
       POSTGRES_USER: glaiss
@@ -76,53 +75,16 @@ services:
     networks:
       - microservices
 
-  users:
-    image: gacacio/users:0.20.0
-    container_name: users
+  discovery:
+    image: gacacio/discovery:0.8.0
+    container_name: discovery
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      DB_URL: "jdbc:postgresql://postgres:5432/glaiss?TimeZone=America/Sao_Paulo"
-      USER_DB: "att_user"
-      PASSWORD_DB: "user_ddl_SaintBier"
-      URL_DISCOVERY: "http://discovery:8761/eureka"
-      PORT: 8080
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+      PORT: 8761
     ports:
-      - "8197:8080"
+      - "8761:8761"
     networks:
       - microservices
-    depends_on:
-      - postgres
-      - redis
-      - elasticsearch
-      - kibana
-      - logstash
-      - discovery
-
-  lista:
-    image: gacacio/lista:0.17.0
-    container_name: lista
-    environment:
-      SPRING_PROFILES_ACTIVE: prod
-      DB_URL: "jdbc:postgresql://postgres:5432/glaiss?TimeZone=America/Sao_Paulo"
-      USER_DB: "att_lista"
-      PASSWORD_DB: "lista_ddl_SaintBier"
-      URL_DISCOVERY: "http://discovery:8761/eureka"
-      PORT: 8080
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-    ports:
-      - "8193:8080"
-    networks:
-      - microservices
-    depends_on:
-      - postgres
-      - redis
-      - elasticsearch
-      - kibana
-      - logstash
-      - discovery
 
   gateway:
     image: gacacio/gateway:0.12.0
@@ -131,6 +93,7 @@ services:
       SPRING_PROFILES_ACTIVE: prod
       URL_DISCOVERY: "http://discovery:8761/eureka"
       PORT: 8080
+      LOGSTASH: logstash:5000
     ports:
       - "8192:8080"
     networks:
@@ -143,20 +106,82 @@ services:
       - logstash
       - discovery
 
-  discovery:
-    image: gacacio/discovery:0.8.0
-    container_name: discovery
+  users:
+    image: gacacio/users:0.21.0
+    container_name: users
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      PORT: 8761
+      DB_URL: "jdbc:postgresql://postgres:5432/glaiss?TimeZone=America/Sao_Paulo"
+      USER_DB: "gl_user"
+      PASSWORD_DB: "gl_user"
+      URL_DISCOVERY: "http://discovery:8761/eureka"
+      PORT: 8080
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      LOGSTASH: logstash:5000
     ports:
-      - "8761:8761"
+      - "8197:8080"
     networks:
       - microservices
+    depends_on:
+      - postgres
+      - redis
+      - elasticsearch
+      - logstash
+      - discovery
 
+  lista:
+    image: gacacio/lista:0.19.0
+    container_name: lista
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: "jdbc:postgresql://postgres:5432/glaiss?TimeZone=America/Sao_Paulo"
+      USER_DB: "gl_lista"
+      PASSWORD_DB: "gl_lista"
+      URL_DISCOVERY: "http://discovery:8761/eureka"
+      PORT: 8080
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      LOGSTASH: logstash:5000
+    ports:
+      - "8193:8080"
+    networks:
+      - microservices
+    depends_on:
+      - postgres
+      - redis
+      - elasticsearch
+      - logstash
+      - discovery
+
+  notification:
+    image: gacacio/notification:0.2.1
+    container_name: notification
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: "jdbc:postgresql://postgres:5432/glaiss?TimeZone=America/Sao_Paulo"
+      USER_DB: "gl_notification"
+      PASSWORD_DB: "gl_notification"
+      URL_DISCOVERY: "http://discovery:8761/eureka"
+      PORT: 8080
+      LOGSTASH: logstash:5000
+      MAIL_HOST: sandbox.smtp.mailtrap.io
+      MAIL_PORT: 587
+      MAIL_USERNAME: 7341993018b0bd
+      MAIL_PASSWORD: 468af5ce7462c2
+    ports:
+      - "8194:8080"
+    networks:
+      - microservices
+    depends_on:
+      - postgres
+      - elasticsearch
+      - logstash
+      - discovery
 volumes:
   rabbitmq-data:
   elasticsearch_data:
+  postgres_data:
 
 networks:
   microservices:
