@@ -1,22 +1,34 @@
-create SCHEMA att_user;
-create SCHEMA att_lista;
+SET TIME ZONE 'America/Sao_Paulo';
+create SCHEMA gl_user;
+create SCHEMA gl_lista;
+create SCHEMA gl_notification;
 
 drop schema public;
+SET TIME ZONE 'America/Sao_Paulo';
 
-create user att_user with password 'user_ddl_SaintBier';
-grant all privileges on schema att_user to att_user;
 
-create user att_user_app
-with password 'user_SaintBier';
-grant usage on schema att_user to att_user_app;
+create user gl_user with password 'gl_user';
+grant all privileges on schema gl_user to gl_user;
 
-create user att_lista
-with password 'lista_ddl_SaintBier';
-grant all privileges on schema att_lista to att_lista;
+create user gl_user_app
+with password 'gl_user';
+grant usage on schema gl_user to gl_user_app;
 
-create user att_lista_app
-with password 'lista_SaintBier';
-grant usage on schema att_lista to att_lista_app;
+create user gl_lista
+with password 'gl_lista';
+grant all privileges on schema gl_lista to gl_lista;
+
+create user gl_lista_app
+with password 'gl_lista';
+grant usage on schema gl_lista to gl_lista_app;
+
+create user gl_notification
+with password 'gl_notification';
+grant all privileges on schema gl_notification to gl_notification;
+
+create user gl_notification_app
+with password 'gl_notification';
+grant usage on schema gl_notification to gl_notification_app;
 
 -- Performance Tuning
 ALTER SYSTEM
