@@ -76,7 +76,7 @@ services:
       - microservices
 
   discovery:
-    image: gacacio/discovery:0.8.0
+    image: gacacio/discovery:0.9.0
     container_name: discovery
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -87,13 +87,14 @@ services:
       - microservices
 
   gateway:
-    image: gacacio/gateway:0.12.0
+    image: gacacio/gateway:0.14.0
     container_name: gateway
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      URL_DISCOVERY: "http://discovery:8761/eureka"
+      URL_DISCOVERY: "http://discovery:8761/discovery/eureka"
       PORT: 8080
       LOGSTASH: logstash:5000
+      CHAVE_API_KEY: chave-api-gateway
     ports:
       - "8192:8080"
     networks:
@@ -107,14 +108,14 @@ services:
       - discovery
 
   users:
-    image: gacacio/users:0.21.0
+    image: gacacio/users:0.23.0
     container_name: users
     environment:
       SPRING_PROFILES_ACTIVE: prod
       DB_URL: "jdbc:postgresql://postgres:5432/glaiss?TimeZone=America/Sao_Paulo"
       USER_DB: "gl_user"
       PASSWORD_DB: "gl_user"
-      URL_DISCOVERY: "http://discovery:8761/eureka"
+      URL_DISCOVERY: "http://discovery:8761/discovery/eureka"
       PORT: 8080
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -131,14 +132,14 @@ services:
       - discovery
 
   lista:
-    image: gacacio/lista:0.19.0
+    image: gacacio/lista:0.21.0
     container_name: lista
     environment:
       SPRING_PROFILES_ACTIVE: prod
       DB_URL: "jdbc:postgresql://postgres:5432/glaiss?TimeZone=America/Sao_Paulo"
       USER_DB: "gl_lista"
       PASSWORD_DB: "gl_lista"
-      URL_DISCOVERY: "http://discovery:8761/eureka"
+      URL_DISCOVERY: "http://discovery:8761/discovery/eureka"
       PORT: 8080
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -155,20 +156,21 @@ services:
       - discovery
 
   notification:
-    image: gacacio/notification:0.2.1
+    image: notification:1
     container_name: notification
     environment:
       SPRING_PROFILES_ACTIVE: prod
       DB_URL: "jdbc:postgresql://postgres:5432/glaiss?TimeZone=America/Sao_Paulo"
       USER_DB: "gl_notification"
       PASSWORD_DB: "gl_notification"
-      URL_DISCOVERY: "http://discovery:8761/eureka"
+      URL_DISCOVERY: "http://discovery:8761/discovery/eureka"
       PORT: 8080
       LOGSTASH: logstash:5000
       MAIL_HOST: sandbox.smtp.mailtrap.io
       MAIL_PORT: 587
       MAIL_USERNAME: 7341993018b0bd
       MAIL_PASSWORD: 468af5ce7462c2
+      CHAVES_DE_ACESSO: chave-api,chave-api-gateway
     ports:
       - "8194:8080"
     networks:
@@ -178,6 +180,7 @@ services:
       - elasticsearch
       - logstash
       - discovery
+
 volumes:
   rabbitmq-data:
   elasticsearch_data:
