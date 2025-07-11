@@ -1,8 +1,8 @@
 version: '3.8'
 
 services:
-  postgres:
-    container_name: postgres
+  postgres-api:
+    container_name: postgres-api
     build: ./postgres
     environment:
       POSTGRES_USER: glaiss
@@ -100,7 +100,7 @@ services:
     networks:
       - microservices
     depends_on:
-      - postgres
+      - postgres-api
       - redis
       - elasticsearch
       - kibana
@@ -112,7 +112,7 @@ services:
     container_name: users
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      DB_URL: "jdbc:postgresql://postgres:5432/glaiss?TimeZone=America/Sao_Paulo"
+      DB_URL: "jdbc:postgresql://postgres-api:5432/glaiss?TimeZone=America/Sao_Paulo"
       USER_DB: "gl_user"
       PASSWORD_DB: "gl_user"
       URL_DISCOVERY: "http://discovery:8761/discovery/eureka"
@@ -125,7 +125,7 @@ services:
     networks:
       - microservices
     depends_on:
-      - postgres
+      - postgres-api
       - redis
       - elasticsearch
       - logstash
@@ -136,7 +136,7 @@ services:
     container_name: lista
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      DB_URL: "jdbc:postgresql://postgres:5432/glaiss?TimeZone=America/Sao_Paulo"
+      DB_URL: "jdbc:postgresql://postgres-api:5432/glaiss?TimeZone=America/Sao_Paulo"
       USER_DB: "gl_lista"
       PASSWORD_DB: "gl_lista"
       URL_DISCOVERY: "http://discovery:8761/discovery/eureka"
@@ -149,7 +149,7 @@ services:
     networks:
       - microservices
     depends_on:
-      - postgres
+      - postgres-api
       - redis
       - elasticsearch
       - logstash
@@ -160,7 +160,7 @@ services:
     container_name: notification
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      DB_URL: "jdbc:postgresql://postgres:5432/glaiss?TimeZone=America/Sao_Paulo"
+      DB_URL: "jdbc:postgresql://postgres-api:5432/glaiss?TimeZone=America/Sao_Paulo"
       USER_DB: "gl_notification"
       PASSWORD_DB: "gl_notification"
       URL_DISCOVERY: "http://discovery:8761/discovery/eureka"
@@ -176,7 +176,7 @@ services:
     networks:
       - microservices
     depends_on:
-      - postgres
+      - postgres-api
       - elasticsearch
       - logstash
       - discovery
