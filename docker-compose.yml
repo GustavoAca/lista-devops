@@ -13,6 +13,8 @@ services:
       - "5432:5432"
     networks:
       - microservices
+    mem_limit: 512m
+    cpus: 0.5
 
   redis:
     image: redis:latest
@@ -25,59 +27,140 @@ services:
       - ./.data/duducp/RedisData:/data
     networks:
       - microservices
+    mem_limit: 256m
+    cpus: 0.25
 
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.2
-    container_name: elasticsearch
+  #  elasticsearch:
+  #    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.2
+  #    container_name: elasticsearch
+  #    environment:
+  #      - discovery.type=single-node
+  #      - xpack.security.enabled=false
+  #      - bootstrap.memory_lock=true
+  #      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+  #    ulimits:
+  #      memlock:
+  #        soft: -1
+  #        hard: -1
+  #    ports:
+  #      - "9200:9200"
+  #      - "9300:9300"
+  #    volumes:
+  #      - elasticsearch_data:/usr/share/elasticsearch/data
+  #    networks:
+  #      - microservices
+  #    mem_limit: 2g
+  #    cpus: 1.5
+
+  #  logstash:
+  #    image: docker.elastic.co/logstash/logstash:8.10.2
+  #    container_name: logstash
+  #    depends_on:
+  #      - elasticsearch
+  #    ports:
+  #      - "5000:5000"
+  #      - "9600:9600"
+  #    environment:
+  #      - LS_JAVA_OPTS=-Xms256m -Xmx256m
+  #    volumes:
+  #      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+  #    networks:
+  #      - microservices
+  #    mem_limit: 512m
+  #    cpus: 0.5
+  #
+  #  kibana:
+  #    image: docker.elastic.co/kibana/kibana:8.10.2
+  #    container_name: kibana
+  #    depends_on:
+  #      - elasticsearch
+  #    ports:
+  #      - "5601:5601"
+  #    environment:
+  #      ELASTICSEARCH_HOSTS: "http://elasticsearch:9200"
+  #    networks:
+  #      - microservices
+  #    mem_limit: 512m
+  #    cpus: 0.5
+
+  opensearch:
+    image: opensearchproject/opensearch:2.15.0
+    container_name: opensearch
     environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch-node1
       - bootstrap.memory_lock=true
-      - ES_JAVA_OPTS=-Xms2g -Xmx2g
-      - ELASTICSEARCH_PASSWORD=password
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "DISABLE_INSTALL_DEMO_CONFIG=true"
+      - "DISABLE_SECURITY_PLUGIN=true"
+      - "discovery.type=single-node"
     ulimits:
       memlock:
         soft: -1
         hard: -1
     ports:
       - "9200:9200"
-      - "9300:9300"
-    volumes:
-      - elasticsearch_data:/usr/share/elasticsearch/data
-    networks:
-      - microservices
-
-  logstash:
-    image: docker.elastic.co/logstash/logstash:8.10.2
-    container_name: logstash
-    depends_on:
-      - elasticsearch
-    ports:
-      - "5000:5000"
       - "9600:9600"
-    environment:
-      - LS_JAVA_OPTS=-Xms256m -Xmx256m
-    volumes:
-      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
-    networks:
-      - microservices
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
-  kibana:
-    image: docker.elastic.co/kibana/kibana:8.10.2
-    container_name: kibana
-    depends_on:
-      - elasticsearch
+  dashboards:
+    image: opensearchproject/opensearch-dashboards:2.15.0
+    container_name: dashboards
     ports:
       - "5601:5601"
     environment:
-      ELASTICSEARCH_HOSTS: "http://elasticsearch:9200"
-      ELASTICSEARCH_HOST: "http://elasticsearch:9200"
-    networks:
-      - microservices
+      - OPENSEARCH_HOSTS=["http://opensearch:9200"]
+      - OPENSEARCH_SSL_VERIFICATION_MODE=none
+      - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+    depends_on:
+      - opensearch
+
+  xray-daemon:
+    image: amazon/aws-xray-daemon
+    container_name: xray-daemon
+    ports:
+      - "2000:2000/udp"
+    environment:
+      - AWS_REGION=us-east-1
+
+  fluent-bit:
+    image: fluent/fluent-bit:4.1.1
+    container_name: fluent-bit
+#    volumes:
+#      - ./fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+#      - ./parsers.conf:/fluent-bit/etc/parsers.conf:ro
+#      - ./gateway/logs:/app/logs/gateway:ro
+#      - ./users/logs:/app/logs/users:ro
+#      - ./lista/logs:/app/logs/lista:ro
+#      - ./discovery/logs:/app/logs/discovery:ro
+#      - ./notification/logs:/app/logs/notification:ro
+#      - ../gateway/logs:/app/logs/gateway:ro
+#      - ../users/logs:/app/logs/users:ro
+#      - ../lista/logs:/app/logs/lista:ro
+#      - ../discovery/logs:/app/logs/discovery:ro
+#      - ../notification/logs:/app/logs/notification:ro
+    ports: # Adicionar esta seção
+      - "24224:24224"
+      - "24224:24224/udp"
+    volumes:
+      - ./fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - ./parsers.conf:/fluent-bit/etc/parsers.conf:ro
+    depends_on:
+      - opensearch
 
   discovery:
-    image: gacacio/discovery:0.9.0
+#    image: gacacio/discovery:0.9.0
+    build: ../discovery
     container_name: discovery
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: discovery.service
     environment:
       SPRING_PROFILES_ACTIVE: prod
       PORT: 8761
@@ -95,6 +178,11 @@ services:
       PORT: 8080
       LOGSTASH: logstash:5000
       CHAVE_API_KEY: chave-api-gateway
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: gateway.service
     ports:
       - "8192:8080"
     networks:
@@ -102,9 +190,9 @@ services:
     depends_on:
       - postgres-api
       - redis
-      - elasticsearch
-      - kibana
-      - logstash
+#      - elasticsearch
+#      - kibana
+#      - logstash
       - discovery
 
   users:
@@ -120,6 +208,11 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       LOGSTASH: logstash:5000
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: users.service
     ports:
       - "8197:8080"
     networks:
@@ -127,12 +220,13 @@ services:
     depends_on:
       - postgres-api
       - redis
-      - elasticsearch
-      - logstash
+#      - elasticsearch
+#      - logstash
       - discovery
 
   lista:
-    image: gacacio/lista:0.21.0
+#    image: gacacio/lista:0.21.0
+    build: ../lista
     container_name: lista
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -151,9 +245,16 @@ services:
     depends_on:
       - postgres-api
       - redis
-      - elasticsearch
-      - logstash
+#      - elasticsearch
+#      - logstash
       - discovery
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: lista.service
+    volumes:
+      - ../lista/logs:/app/logs
 
   notification:
     image: notification:1
@@ -173,12 +274,17 @@ services:
       CHAVES_DE_ACESSO: chave-api,chave-api-gateway
     ports:
       - "8194:8080"
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: notification.service
     networks:
       - microservices
     depends_on:
       - postgres-api
-      - elasticsearch
-      - logstash
+#      - elasticsearch
+#      - logstash
       - discovery
 
 volumes:
