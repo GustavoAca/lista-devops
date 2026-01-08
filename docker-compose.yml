@@ -13,6 +13,8 @@ services:
       - "5432:5432"
     networks:
       - microservices
+    mem_limit: 512m
+    cpus: 0.5
 
   redis:
     image: redis:latest
