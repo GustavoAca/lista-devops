@@ -27,6 +27,8 @@ services:
       - ./.data/duducp/RedisData:/data
     networks:
       - microservices
+    mem_limit: 512m
+    cpus: 0.5
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.10.2
@@ -76,112 +78,170 @@ services:
       ELASTICSEARCH_HOST: "http://elasticsearch:9200"
     networks:
       - microservices
-#
-#  discovery:
-#    image: gacacio/discovery:0.9.0
-#    container_name: discovery
-#    environment:
-#      SPRING_PROFILES_ACTIVE: prod
-#      PORT: 8761
-#    ports:
-#      - "8761:8761"
-#    networks:
-#      - microservices
-#
-#  gateway:
-#    image: gacacio/gateway:0.14.0
-#    container_name: gateway
-#    environment:
-#      SPRING_PROFILES_ACTIVE: prod
-#      URL_DISCOVERY: "http://discovery:8761/discovery/eureka"
-#      PORT: 8080
-#      LOGSTASH: logstash:5000
-#      CHAVE_API_KEY: chave-api-gateway
-#    ports:
-#      - "8192:8080"
-#    networks:
-#      - microservices
-#    depends_on:
-#      - postgres-api
-#      - redis
-#      - elasticsearch
-#      - kibana
-#      - logstash
-#      - discovery
-#
-#  users:
-#    image: gacacio/users:0.23.0
-#    container_name: users
-#    environment:
-#      SPRING_PROFILES_ACTIVE: prod
-#      DB_URL: "jdbc:postgresql://postgres-api:5432/glaiss?TimeZone=America/Sao_Paulo"
-#      USER_DB: "gl_user"
-#      PASSWORD_DB: "gl_user"
-#      URL_DISCOVERY: "http://discovery:8761/discovery/eureka"
-#      PORT: 8080
-#      REDIS_HOST: redis
-#      REDIS_PORT: 6379
-#      LOGSTASH: logstash:5000
-#    ports:
-#      - "8197:8080"
-#    networks:
-#      - microservices
-#    depends_on:
-#      - postgres-api
-#      - redis
-#      - elasticsearch
-#      - logstash
-#      - discovery
-#
-#  lista:
-#    image: gacacio/lista:0.21.0
-#    container_name: lista
-#    environment:
-#      SPRING_PROFILES_ACTIVE: prod
-#      DB_URL: "jdbc:postgresql://postgres-api:5432/glaiss?TimeZone=America/Sao_Paulo"
-#      USER_DB: "gl_lista"
-#      PASSWORD_DB: "gl_lista"
-#      URL_DISCOVERY: "http://discovery:8761/discovery/eureka"
-#      PORT: 8080
-#      REDIS_HOST: redis
-#      REDIS_PORT: 6379
-#      LOGSTASH: logstash:5000
-#    ports:
-#      - "8193:8080"
-#    networks:
-#      - microservices
-#    depends_on:
-#      - postgres-api
-#      - redis
-#      - elasticsearch
-#      - logstash
-#      - discovery
-#
-#  notification:
-#    image: notification:1
-#    container_name: notification
-#    environment:
-#      SPRING_PROFILES_ACTIVE: prod
-#      DB_URL: "jdbc:postgresql://postgres-api:5432/glaiss?TimeZone=America/Sao_Paulo"
-#      USER_DB: "gl_notification"
-#      PASSWORD_DB: "gl_notification"
-#      URL_DISCOVERY: "http://discovery:8761/discovery/eureka"
-#      PORT: 8080
-#      LOGSTASH: logstash:5000
-#      MAIL_HOST: sandbox.smtp.mailtrap.io
-#      MAIL_PORT: 587
-#      MAIL_USERNAME: 7341993018b0bd
-#      MAIL_PASSWORD: 468af5ce7462c2
-#      CHAVES_DE_ACESSO: chave-api,chave-api-gateway
-#    ports:
-#      - "8194:8080"
-#    networks:
-#      - microservices
-#    depends_on:
-#      - postgres-api
-#      - elasticsearch
-#      - logstash
-#      - discovery
+
+  discovery:
+    image: gacacio/discovery:0.10.0
+    container_name: discovery
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      PORT: 8761
+    ports:
+      - "8761:8761"
+    networks:
+      - microservices
+    mem_limit: 512m
+    cpus: 0.5
+
+  gateway:
+    image: gacacio/gateway:0.18.0
+    container_name: gateway
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      URL_DISCOVERY: "http://discovery:8761/discovery/eureka"
+      PORT: 8080
+      LOGSTASH: logstash:5000
+      CHAVE_API_KEY: chave-api-gateway
+      SERVICO-FRONTEND: http://localhost:4200
+      EUREKA_INSTANCE_HOSTNAME: localhost
+      EUREKA_INSTANCE_NON_SECURE_PORT: 8080
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: false
+    ports:
+      - "8192:8080"
+    networks:
+      - microservices
+    depends_on:
+      - postgres-api
+      - redis
+      - elasticsearch
+      - kibana
+      - logstash
+      - discovery
+    mem_limit: 512m
+    cpus: 0.5
+
+  users:
+    image: gacacio/users:0.28.0
+    container_name: users
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: "jdbc:postgresql://postgres-api:5432/glaiss?TimeZone=America/Sao_Paulo"
+      USER_DB: "gl_user"
+      PASSWORD_DB: "gl_user"
+      URL_DISCOVERY: "http://discovery:8761/discovery/eureka"
+      PORT: 8080
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      LOGSTASH: logstash:5000
+      GITHUB_CLIENT_ID: Ov23litI3PMQh1TmiF1y
+      GITHUB_CLIENT_REDIRECT_URI: http://localhost:4200/oauth/callback/github
+      GITHUB_CLIENT_SECRET: 399535014819699780114a003ba4dcb110427821
+      GOOGLE_CLIENT_ID: 780236549046-8gfsi22qj1jee5o9ekcc4usrk3r3d9pf:apps:googleusercontent:com
+      GOOGLE_CLIENT_REDIRECT_URI: http://localhost:4200/oauth/callback/google
+      GOOGLE_CLIENT_SECRET: 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
+      EUREKA_INSTANCE_HOSTNAME: users
+      EUREKA_INSTANCE_NON_SECURE_PORT: 8080
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: false
+      JWT_PRIVATE_KEY: |
+        -----BEGIN PRIVATE KEY-----
+        MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDHLGz1rRulh0f3
+        HaF+M1LI2fPgVeZKk/P0JEtu1WW+CGdngb0cHdn75nYd+ksg9qGgLKn4GLxv2CYO
+        57epECdxI0fXosJw2s5gVqnP0yhbdTqKM4pkmyjB1YOcdjx7cWNIFPDmzhf1zbCF
+        ra/0SuNA1h0ggNeapahabbbToywPNvBDhtCjr3/MxhTTFSYjRlBWJhVroNW9ddmt
+        jLIs068mtLEX4Wzd83cy/r+sQubCtH0ok0v41oq5BbsENXwvR/mbp1q+1DDNKbCR
+        H4GVP3vjA8892dk34LNFb7vAAdOwzDUPycS0vZuQeHVfzan7afIyX6pD8W1NpgS9
+        udrM8ax7AgMBAAECggEAM8PXGc8A9XeAe7hmxY7/QBZtbOvGa7GiYNyiAk9SHx6+
+        CUfN56XWhsKyBj6MEignf6K8FjAPoZ3y3kLZGAaLybrarC+wC3bC1oUPo2UFAygn
+        q82TdWxiHmaoyxxrwcWJgS14IvSDg64O599pcLuZ7rr3XQA/iQDvDXmgX8bz54vx
+        HThlCGV1I9lBEJitSBmuFM3CqQrup8wU6X/heuLIOUBtx3va1A6fjtCXFlynDrT+
+        CelyaU97tRIbgoxgOrkbqEIbl3i10piHyp4C7q2dsFzLxJXmzV+oPKbqio9PtdUK
+        SjPrY9KainNC6e62LQl/4sL7qSo7NjHsjgG0iKItAQKBgQDywR4YDEkI8qCKOcb1
+        zX9a/eF3b1856t5X8pOzW8Y5p3qV66wQwWCdX7ErccIuaW4cqmEConuVmpevra6A
+        JLb3LnHr6QO21FiFOz2mFQv9tXUw9+4Hur25EGDFKgyxrJGZkvgV5eqjma0szjss
+        lFUJR0Y6ixY+++w0/Dn5FIlS+wKBgQDSCo4Uue5W2XMJGwuUSRuWbOBFsGw8v8dV
+        4VD+iNigzADu0k58FLyE038HLQ4gtY5jRl54Ag47GoZiMxL1gHvm8met5+upIWB0
+        xKOBlUO0UKi5CQLOzzTmCGcvMf9hCJ8QTzNxGZyZ1SFxZrpzujNUvLRuSsP/4uFQ
+        L2wnmmXUgQKBgQCsDur4moSNngLh1g/KGuxAnx/Wmo7BK1KKvXmor8yxAp7lchQU
+        ECwdfzzBETFT2hBcqvp1dprnr5oBv7WmR9+TFU1Tq2WhiaJwVEve0p4cJig5HBGP
+        UvG0IQKl3KcAq9LLKhtC0iJb8MmIr2fLshsPp4AEcJ7E56RE7d1dSQwITwKBgA2H
+        KoGBPC2R0cvrVwKU9tboakVyyHXdMDyCx5GtRK6OlRzMpMtvFnlDmfHfYAKRTvtr
+        49e84ifCXJdkjLsNLG3CfRUBU/dPtAOxSoqlD3hEnalVQD4LsG+EaQjsInOgd4Y4
+        Y6rMKH7r8Dx6jlW3z2iMwt47qIYJmdNtSnz+f8KBAoGANdrpFdXV7H3w36A2Xeq9
+        jh5pBtwUOIROX2kzlkTqROxH7MDuPdCOume4/8Y8gnDeQNXkXxxqydKGi+K0VNIT
+        Bk1sbUOXs9zFLkGwe2jv+L5t2OuqVejltTv7hX18m08mzBjaX5PdnHn0ylULbc8v
+        wvcy9fmb+8TLt4iXndGYnJ8=
+        -----END PRIVATE KEY-----
+    ports:
+      - "8197:8080"
+    networks:
+      - microservices
+    depends_on:
+      - postgres-api
+      - redis
+      - elasticsearch
+      - logstash
+      - discovery
+    mem_limit: 512m
+    cpus: 0.5
+
+  lista:
+    image: gacacio/lista:0.26.0
+    container_name: lista
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: "jdbc:postgresql://postgres-api:5432/glaiss?TimeZone=America/Sao_Paulo"
+      USER_DB: "gl_lista"
+      PASSWORD_DB: "gl_lista"
+      URL_DISCOVERY: "http://discovery:8761/discovery/eureka"
+      PORT: 8080
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      LOGSTASH: logstash:5000
+      EUREKA_INSTANCE_HOSTNAME: lista
+      EUREKA_INSTANCE_NON_SECURE_PORT: 8080
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: false
+    ports:
+      - "8193:8080"
+    networks:
+      - microservices
+    depends_on:
+      - postgres-api
+      - redis
+      - elasticsearch
+      - logstash
+      - discovery
+    mem_limit: 512m
+    cpus: 0.5
+
+  notification:
+    image: gacacio/notification:0.10.1
+    container_name: notification
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: "jdbc:postgresql://postgres-api:5432/glaiss?TimeZone=America/Sao_Paulo"
+      USER_DB: "gl_notification"
+      PASSWORD_DB: "gl_notification"
+      URL_DISCOVERY: "http://discovery:8761/discovery/eureka"
+      PORT: 8080
+      LOGSTASH: logstash:5000
+      MAIL_HOST: sandbox.smtp.mailtrap.io
+      MAIL_PORT: 587
+      MAIL_USERNAME: 7341993018b0bd
+      MAIL_PASSWORD: 468af5ce7462c2
+      CHAVES_DE_ACESSO: chave-api,chave-api-gateway
+      EUREKA_INSTANCE_HOSTNAME: localhost
+      EUREKA_INSTANCE_NON_SECURE_PORT: 8080
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: false
+    ports:
+      - "8194:8080"
+    networks:
+      - microservices
+    depends_on:
+      - postgres-api
+      - elasticsearch
+      - logstash
+      - discovery
+    mem_limit: 512m
+    cpus: 0.5
 
 volumes:
   rabbitmq-data:
