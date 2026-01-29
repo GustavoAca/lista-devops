@@ -1,146 +1,53 @@
 version: '3.8'
 
 services:
+  # -----------------------
+  # Banco de dados Postgres
+  # -----------------------
   postgres-api:
-    container_name: postgres-api
     build: ./postgres
     environment:
       POSTGRES_USER: glaiss
       POSTGRES_PASSWORD: PPgg123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - microservices
+    restart: always
     expose:
       - "5432"
     ports:
       - "5432:5432"
+
+  # -----------------------
+  # Redis (opcional se usado)
+  # -----------------------
+  redis:
+    image: redis:7
+    container_name: redis
     networks:
       - microservices
-    mem_limit: 512m
-    cpus: 0.5
-
-  redis:
-    image: redis:latest
-    container_name: redis
+    restart: always
     expose:
       - "6379"
-    ports:
-      - "6379:6379"
-    volumes:
-      - ./.data/duducp/RedisData:/data
-    networks:
-      - microservices
-    mem_limit: 512m
-    cpus: 0.5
 
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.2
-    container_name: elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - bootstrap.memory_lock=true
-      - ES_JAVA_OPTS=-Xms2g -Xmx2g
-      - ELASTICSEARCH_PASSWORD=password
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    ports:
-      - "9200:9200"
-      - "9300:9300"
-    volumes:
-      - elasticsearch_data:/usr/share/elasticsearch/data
-    networks:
-      - microservices
-
-  logstash:
-    image: docker.elastic.co/logstash/logstash:8.10.2
-    container_name: logstash
-    depends_on:
-      - elasticsearch
-    ports:
-      - "5000:5000"
-      - "9600:9600"
-    environment:
-      - LS_JAVA_OPTS=-Xms256m -Xmx256m
-    volumes:
-      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
-    networks:
-      - microservices
-
-  kibana:
-    image: docker.elastic.co/kibana/kibana:8.10.2
-    container_name: kibana
-    depends_on:
-      - elasticsearch
-    ports:
-      - "5601:5601"
-    environment:
-      ELASTICSEARCH_HOSTS: "http://elasticsearch:9200"
-      ELASTICSEARCH_HOST: "http://elasticsearch:9200"
-    networks:
-      - microservices
-
-  discovery:
-    image: gacacio/discovery:0.10.0
-    container_name: discovery
-    environment:
-      SPRING_PROFILES_ACTIVE: prod
-      PORT: 8761
-    ports:
-      - "8761:8761"
-    networks:
-      - microservices
-    mem_limit: 512m
-    cpus: 0.5
-
-  gateway:
-    image: gacacio/gateway:0.18.0
-    container_name: gateway
-    environment:
-      SPRING_PROFILES_ACTIVE: dev
-      URL_DISCOVERY: "http://discovery:8761/discovery/eureka"
-      PORT: 8080
-      LOGSTASH: logstash:5000
-      CHAVE_API_KEY: chave-api-gateway
-      SERVICO-FRONTEND: http://localhost:4200
-      EUREKA_INSTANCE_HOSTNAME: localhost
-      EUREKA_INSTANCE_NON_SECURE_PORT: 8080
-      EUREKA_INSTANCE_PREFER_IP_ADDRESS: false
-    ports:
-      - "8192:8080"
-    networks:
-      - microservices
-    depends_on:
-      - postgres-api
-      - redis
-      - elasticsearch
-      - kibana
-      - logstash
-      - discovery
-    mem_limit: 512m
-    cpus: 0.5
-
+  # -----------------------
+  # Serviço Users
+  # -----------------------
   users:
     image: gacacio/users:0.28.0
     container_name: users
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      DB_URL: "jdbc:postgresql://postgres-api:5432/glaiss?TimeZone=America/Sao_Paulo"
+      DB_URL: "jdbc:postgresql://postgres:5432/glaiss?currentSchema=gl_users&TimeZone=America/Sao_Paulo"
       USER_DB: "gl_user"
       PASSWORD_DB: "gl_user"
-      URL_DISCOVERY: "http://discovery:8761/discovery/eureka"
-      PORT: 8080
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      LOGSTASH: logstash:5000
       GITHUB_CLIENT_ID: Ov23litI3PMQh1TmiF1y
       GITHUB_CLIENT_REDIRECT_URI: http://localhost:4200/oauth/callback/github
       GITHUB_CLIENT_SECRET: 399535014819699780114a003ba4dcb110427821
       GOOGLE_CLIENT_ID: 780236549046-8gfsi22qj1jee5o9ekcc4usrk3r3d9pf:apps:googleusercontent:com
       GOOGLE_CLIENT_REDIRECT_URI: http://localhost:4200/oauth/callback/google
       GOOGLE_CLIENT_SECRET: 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
-      EUREKA_INSTANCE_HOSTNAME: users
-      EUREKA_INSTANCE_NON_SECURE_PORT: 8080
-      EUREKA_INSTANCE_PREFER_IP_ADDRESS: false
       JWT_PRIVATE_KEY: |
         -----BEGIN PRIVATE KEY-----
         MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDHLGz1rRulh0f3
@@ -174,78 +81,63 @@ services:
       - "8197:8080"
     networks:
       - microservices
-    depends_on:
-      - postgres-api
-      - redis
-      - elasticsearch
-      - logstash
-      - discovery
-    mem_limit: 512m
-    cpus: 0.5
+    restart: always
+    expose:
+      - "8080"
 
+  # -----------------------
+  # Serviço Lista
+  # -----------------------
   lista:
     image: gacacio/lista:0.26.0
     container_name: lista
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      DB_URL: "jdbc:postgresql://postgres-api:5432/glaiss?TimeZone=America/Sao_Paulo"
+      DB_URL: "jdbc:postgresql://postgres:5432/glaiss?TimeZone=America/Sao_Paulo"
       USER_DB: "gl_lista"
       PASSWORD_DB: "gl_lista"
-      URL_DISCOVERY: "http://discovery:8761/discovery/eureka"
-      PORT: 8080
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      LOGSTASH: logstash:5000
-      EUREKA_INSTANCE_HOSTNAME: lista
-      EUREKA_INSTANCE_NON_SECURE_PORT: 8080
-      EUREKA_INSTANCE_PREFER_IP_ADDRESS: false
-    ports:
-      - "8193:8080"
     networks:
       - microservices
-    depends_on:
-      - postgres-api
-      - redis
-      - elasticsearch
-      - logstash
-      - discovery
-    mem_limit: 512m
-    cpus: 0.5
+    restart: always
+    expose:
+      - "8080"
 
+  # -----------------------
+  # Serviço Notification
+  # -----------------------
   notification:
     image: gacacio/notification:0.10.1
     container_name: notification
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      DB_URL: "jdbc:postgresql://postgres-api:5432/glaiss?TimeZone=America/Sao_Paulo"
+      DB_URL: "jdbc:postgresql://postgres:5432/glaiss?TimeZone=America/Sao_Paulo"
       USER_DB: "gl_notification"
       PASSWORD_DB: "gl_notification"
-      URL_DISCOVERY: "http://discovery:8761/discovery/eureka"
-      PORT: 8080
-      LOGSTASH: logstash:5000
       MAIL_HOST: sandbox.smtp.mailtrap.io
       MAIL_PORT: 587
       MAIL_USERNAME: 7341993018b0bd
       MAIL_PASSWORD: 468af5ce7462c2
-      CHAVES_DE_ACESSO: chave-api,chave-api-gateway
-      EUREKA_INSTANCE_HOSTNAME: localhost
-      EUREKA_INSTANCE_NON_SECURE_PORT: 8080
-      EUREKA_INSTANCE_PREFER_IP_ADDRESS: false
-    ports:
-      - "8194:8080"
     networks:
       - microservices
-    depends_on:
-      - postgres-api
-      - elasticsearch
-      - logstash
-      - discovery
-    mem_limit: 512m
-    cpus: 0.5
+    restart: always
+    expose:
+      - "8080"
+
+  # -----------------------
+  # Nginx como reverse proxy
+  # -----------------------
+  nginx:
+    image: nginx:stable
+    container_name: nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"  # porta externa única
+    networks:
+      - microservices
+    restart: always
 
 volumes:
-  rabbitmq-data:
-  elasticsearch_data:
   postgres_data:
 
 networks:
